@@ -1,8 +1,12 @@
-﻿using UnityEngine;
+using UnityEngine;
+using UnityEditorInternal;
+using System;
+using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
 
-public class TileMain : MonoBehaviour {
+public class TileMain : MonoBehaviour
+{
 
     //TileMap Texture2D
     public Texture2D SpriteSheet;
@@ -31,24 +35,30 @@ public class TileMain : MonoBehaviour {
     //Bool for adding collider or not
     public bool addcollider;
     //collider type
-    public string[] collidertype = new string[3]{"BoxCollider2D","CircleCollider2D","PolygonCollider2D"};
+    public string[] collidertype = new string[3] { "BoxCollider2D", "CircleCollider2D", "PolygonCollider2D" };
     //int for collider type
     public int coltyp;
     //Pixel to Unit
     public int pixeltounit = 100;
     //position of the marker
-   // [HideInInspector]
+    // [HideInInspector]
     public Vector3 MarkerPosition;
 
-	// Use this for initialization
-	void Start () {
-	
-	}
-	
-	// Update is called once per frame
-	void Update () {
-	
-	}
+    //Decides which sorting layer is chosen
+    public int chosenSortingLayer;
+
+    // Use this for initialization
+    void Start()
+    {
+
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+
+    }
+
     //Drawing the Grid
     void OnDrawGizmosSelected()
     {
@@ -78,9 +88,18 @@ public class TileMain : MonoBehaviour {
             {
                 Gizmos.DrawLine(position + new Vector3(0, i * this.PixelSize.y / pixeltounit, 0), position + new Vector3(mapWidth, i * this.PixelSize.y / pixeltounit, 0));
             }
+
             // Draw marker position
             Gizmos.color = Color.red;
             Gizmos.DrawWireCube(this.MarkerPosition, new Vector3(this.PixelSize.x / pixeltounit, this.PixelSize.y / pixeltounit, 1) * 1.1f);
         }
+    }
+
+    // Get the sorting layer names
+    public string[] GetSortingLayerNames()
+    {
+        Type internalEditorUtilityType = typeof(InternalEditorUtility);
+        PropertyInfo sortingLayersProperty = internalEditorUtilityType.GetProperty("sortingLayerNames", BindingFlags.Static | BindingFlags.NonPublic);
+        return (string[])sortingLayersProperty.GetValue(null, new object[0]);
     }
 }

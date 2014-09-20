@@ -1,8 +1,7 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEditor;
 using System.Collections;
 using System.IO;
-
 
 [CustomEditor(typeof(TileMain))]
 public class TileMainEditor : Editor
@@ -29,6 +28,10 @@ public class TileMainEditor : Editor
     public Vector2 checkvector2;
     //Check variable for int values
     public int checkint;
+
+    //Stores sorting layer names
+    public string[] sortingLayers;
+
     //starts when scene view is enabled
     public void OnEnable()
     {
@@ -36,10 +39,10 @@ public class TileMainEditor : Editor
         tilemain = (TileMain)target;
         tilesize.x = tilemain.PixelSize.x / tilemain.pixeltounit;
         tilesize.y = tilemain.PixelSize.y / tilemain.pixeltounit;
+        sortingLayers = tilemain.GetSortingLayerNames();
         //Debug.Log(tilemain.Tiles[0].textureRect.height / tilemain.Tiles[0].bounds.size.y);
-        
-        
     }
+
     //All the work happinning in Scene view
     void OnSceneGUI()
     {
@@ -57,7 +60,7 @@ public class TileMainEditor : Editor
             //Raycast from camera to mouse position 
             Ray r = HandleUtility.GUIPointToWorldRay(new Vector2(e.mousePosition.x, e.mousePosition.y));
             mouseHitPos = r.origin;
-            
+
             // checks if mouse is on the gameobject layer
             if (IsMouseOnLayer())
             {
@@ -141,69 +144,77 @@ public class TileMainEditor : Editor
             }
             tilemain.LayerSize = EditorGUILayout.Vector2Field("Layer Size: ", tilemain.LayerSize);
             tilemain.Level = EditorGUILayout.FloatField("Level :", tilemain.Level);
+
+            //Sorting layers label
+            EditorGUILayout.LabelField("Sorting layer for new tiles");
+
+            //Choose sorting layer
+            tilemain.chosenSortingLayer = EditorGUILayout.Popup(tilemain.chosenSortingLayer, sortingLayers);
+
             // Add Collider GUI
             tilemain.addcollider = GUILayout.Toggle(tilemain.addcollider, " Add Collider (Experimental)");
             if (tilemain.addcollider)
                 tilemain.coltyp = EditorGUILayout.Popup(tilemain.coltyp, tilemain.collidertype);
+
             GUILayout.EndVertical();
         }
-           //Tiles GUI
-            EditorGUILayout.LabelField("Tiles", EditorStyles.boldLabel);
+        //Tiles GUI
+        EditorGUILayout.LabelField("Tiles", EditorStyles.boldLabel);
 
-            //Show/Hide Tiles
-                if (GUILayout.Button(tilebutton) && tilemain.SpriteSheet && tilemain.isTileGenerated)
+        //Show/Hide Tiles
+        if (GUILayout.Button(tilebutton) && tilemain.SpriteSheet && tilemain.isTileGenerated)
+        {
+
+            if (tilemain.tilesNo > 0)
+            {
+
+
+                if (isTilesetDone == false)
                 {
-
-                    if (tilemain.tilesNo > 0)
-                    {
-
-                        
-                        if (isTilesetDone == false)
-                        {
-                            isTilesetDone = true;
-                            tilebutton = "Hide Tiles";
-                        }
-                        else
-                        {
-                            isTilesetDone = false;
-                            tilebutton = "Show Tiles";
-                        }
-
-                    }
-                    else
-                    {
-                        isTilesetDone = false;
-                        Debug.Log("Must select a texture with sprites.");
-                    }
+                    isTilesetDone = true;
+                    tilebutton = "Hide Tiles";
+                }
+                else
+                {
+                    isTilesetDone = false;
+                    tilebutton = "Show Tiles";
                 }
 
-            //Show scroll bar For next layout
-            scrolepos = GUILayout.BeginScrollView(scrolepos);
-            //if tile preview is generated draw a selection grid with all the tiles generated
-            if (isTilesetDone)
-            {
-                tilemain.tileGridId = GUILayout.SelectionGrid(tilemain.tileGridId, tilemain.asset, 6, tilemain.texButton);
-             
             }
-            GUILayout.EndScrollView();
+            else
+            {
+                isTilesetDone = false;
+                Debug.Log("Must select a texture with sprites.");
+            }
+        }
 
-            
-        
+        //Show scroll bar For next layout
+        scrolepos = GUILayout.BeginScrollView(scrolepos);
+        //if tile preview is generated draw a selection grid with all the tiles generated
+        if (isTilesetDone)
+        {
+            tilemain.tileGridId = GUILayout.SelectionGrid(tilemain.tileGridId, tilemain.asset, 6, tilemain.texButton);
+
+        }
+        GUILayout.EndScrollView();
+
+
+
         //If the values in the editor is changed
         if (GUI.changed)
         {
             //set the current object as a dirty prefab so it wont lode the default values from the prefab
             EditorUtility.SetDirty(tilemain);
-            
+
         }
     }
     //Generation function for asset texture from an array of sprites
     public void assetPreviewGenerator()
     {
-         
+
         for (int i = 0; i < tilemain.tilesNo; i++)
         {
-            
+
             //Store all the images of sprite in a dynamic array
             if (!tilemain.asset[i])
             {
@@ -218,22 +229,22 @@ public class TileMainEditor : Editor
                     tilemain.asset[i].Apply();
                 }
                 //if the exception occur generate the tiles again.
-                catch(UnityException e)
+                catch (UnityException e)
                 {
-                    if(e.Message.StartsWith("Texture '" + tilemain.SpriteSheet.name + "' is not readable"))
+                    if (e.Message.StartsWith("Texture '" + tilemain.SpriteSheet.name + "' is not readable"))
                     {
                         GenerateTiles();
                     }
                 }
-                   
-                    
-                 
+
+
+
             }
-           
-            
+
+
         }
-        
-        
+
+
     }
     // Drawing function
     private void Draw()
@@ -248,10 +259,11 @@ public class TileMainEditor : Editor
             GameObject tile = new GameObject("tile");
             SpriteRenderer renderer = tile.AddComponent<SpriteRenderer>();
             renderer.sprite = tilemain.Tiles[tilemain.tileGridId];
+            renderer.sortingLayerName = sortingLayers[tilemain.chosenSortingLayer]; //Set sorting layer of tile to selected one
             tile.transform.position = tilemain.MarkerPosition;
             if (tilemain.addcollider)
                 tile.AddComponent(tilemain.collidertype[tilemain.coltyp]);
-            tile.name = string.Format("Tile_{0}_{1}_{2}", tilepos.x, tilepos.y,tilepos.z);
+            tile.name = string.Format("Tile_{0}_{1}_{2}", tilepos.x, tilepos.y, tilepos.z);
             tile.transform.parent = tilemain.transform;
             Undo.RegisterCreatedObjectUndo(tile, "Create Tile");
         }
@@ -265,7 +277,7 @@ public class TileMainEditor : Editor
     // Delete Function
     private void Delete()
     {
-        if (tilemain.transform.Find(string.Format("Tile_{0}_{1}_{2}", tilepos.x, tilepos.y,tilepos.z)))
+        if (tilemain.transform.Find(string.Format("Tile_{0}_{1}_{2}", tilepos.x, tilepos.y, tilepos.z)))
         {
             Undo.IncrementCurrentGroup();
             Undo.DestroyObjectImmediate(tilemain.transform.Find(string.Format("Tile_{0}_{1}_{2}", tilepos.x, tilepos.y, tilepos.z)).gameObject);
@@ -278,10 +290,10 @@ public class TileMainEditor : Editor
         // return true or false depending if the mouse is positioned over the map
         if (mouseHitPos.x > tilemain.transform.position.x && mouseHitPos.x < (tilemain.transform.position.x + (tilemain.LayerSize.x * tilemain.PixelSize.x / tilemain.pixeltounit)) && mouseHitPos.y > tilemain.transform.position.y && mouseHitPos.y < (tilemain.transform.position.y + (tilemain.LayerSize.y * tilemain.PixelSize.y / tilemain.pixeltounit)))
         {
-            
+
             return (true);
         }
-        
+
         return (false);
     }
     //returns the location of the marker based on mouse on grid position
@@ -296,9 +308,9 @@ public class TileMainEditor : Editor
         //set the marker position value    
 
         Vector2 marker = new Vector2(pos.x + tilesize.x / 2, pos.y + tilesize.y / 2) + new Vector2(tilemain.transform.position.x, tilemain.transform.position.y);
-       
-        return(new Vector3(marker.x,marker.y,(-tilemain.Level)));
-                
+
+        return (new Vector3(marker.x, marker.y, (-tilemain.Level)));
+
 
     }
     // genaration of the tile from tile map
@@ -318,7 +330,7 @@ public class TileMainEditor : Editor
         //dyanamic array to store the sprites and fill it with sprites
         object[] objs;
         objs = AssetDatabase.LoadAllAssetsAtPath(path);
-       
+
         tilemain.tilesNo = objs.Length - 1;
         tilemain.asset = new Texture2D[tilemain.tilesNo];
         if (tilemain.tilesNo > 0)
@@ -327,7 +339,7 @@ public class TileMainEditor : Editor
             for (int i = 1; i <= objs.Length - 1; i++)
             {
                 tilemain.Tiles.Add((Sprite)objs[i]);
-                
+
             }
             //generate the tiles preview
             assetPreviewGenerator();
@@ -338,5 +350,5 @@ public class TileMainEditor : Editor
             Debug.Log("Must select a texture with sprites.");
     }
 
-    
+
 }

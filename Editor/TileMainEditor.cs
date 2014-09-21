@@ -156,6 +156,11 @@ public class TileMainEditor : Editor
             if (tilemain.addcollider)
                 tilemain.coltyp = EditorGUILayout.Popup(tilemain.coltyp, tilemain.collidertype);
 
+            // Add Material GUI
+            tilemain.addMaterial = GUILayout.Toggle(tilemain.addMaterial, " Add Material");
+            if (tilemain.addMaterial)
+                tilemain.tileMaterial = EditorGUILayout.ObjectField(tilemain.tileMaterial, typeof(Material), false) as Material;
+
             GUILayout.EndVertical();
         }
         //Tiles GUI
@@ -261,8 +266,14 @@ public class TileMainEditor : Editor
             renderer.sprite = tilemain.Tiles[tilemain.tileGridId];
             renderer.sortingLayerName = sortingLayers[tilemain.chosenSortingLayer]; //Set sorting layer of tile to selected one
             tile.transform.position = tilemain.MarkerPosition;
+            //Add collider if wanted
             if (tilemain.addcollider)
                 tile.AddComponent(tilemain.collidertype[tilemain.coltyp]);
+
+            //Add material if wanted and if the material is not null
+            if (tilemain.addMaterial && tilemain.tileMaterial)
+                renderer.material = tilemain.tileMaterial;
+
             tile.name = string.Format("Tile_{0}_{1}_{2}", tilepos.x, tilepos.y, tilepos.z);
             tile.transform.parent = tilemain.transform;
             Undo.RegisterCreatedObjectUndo(tile, "Create Tile");

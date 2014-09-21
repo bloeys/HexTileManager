@@ -44,8 +44,9 @@ public class TileMain : MonoBehaviour
     // [HideInInspector]
     public Vector3 MarkerPosition;
 
-    //Decides which sorting layer is chosen
-    public int chosenSortingLayer;
+    public int chosenSortingLayer;  //Decides which sorting layer is chosen
+    public Material tileMaterial;   //Stores the material to be added
+    public bool addMaterial;    //Bool to decide if we want to add a material or not
 
     // Use this for initialization
     void Start()
@@ -88,7 +89,7 @@ public class TileMain : MonoBehaviour
             {
                 Gizmos.DrawLine(position + new Vector3(0, i * this.PixelSize.y / pixeltounit, 0), position + new Vector3(mapWidth, i * this.PixelSize.y / pixeltounit, 0));
             }
-
+            
             // Draw marker position
             Gizmos.color = Color.red;
             Gizmos.DrawWireCube(this.MarkerPosition, new Vector3(this.PixelSize.x / pixeltounit, this.PixelSize.y / pixeltounit, 1) * 1.1f);

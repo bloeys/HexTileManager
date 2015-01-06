@@ -1,7 +1,10 @@
 using UnityEngine;
 using UnityEditor;
+using UnityEditorInternal;
+using System;
+using System.Reflection;
 using System.Collections;
-using System.IO;
+using System.Collections.Generic;
 
 [CustomEditor(typeof(TileMain))]
 public class TileMainEditor : Editor
@@ -39,7 +42,7 @@ public class TileMainEditor : Editor
         tilemain = (TileMain)target;
         tilesize.x = tilemain.PixelSize.x / tilemain.pixeltounit;
         tilesize.y = tilemain.PixelSize.y / tilemain.pixeltounit;
-        sortingLayers = tilemain.GetSortingLayerNames();
+        sortingLayers = GetSortingLayerNames();
         //Debug.Log(tilemain.Tiles[0].textureRect.height / tilemain.Tiles[0].bounds.size.y);
     }
 
@@ -213,6 +216,7 @@ public class TileMainEditor : Editor
 
         }
     }
+
     //Generation function for asset texture from an array of sprites
     public void assetPreviewGenerator()
     {
@@ -361,5 +365,11 @@ public class TileMainEditor : Editor
             Debug.Log("Must select a texture with sprites.");
     }
 
-
+    // Get the sorting layer names
+    public string[] GetSortingLayerNames()
+    {
+        Type internalEditorUtilityType = typeof(InternalEditorUtility);
+        PropertyInfo sortingLayersProperty = internalEditorUtilityType.GetProperty("sortingLayerNames", BindingFlags.Static | BindingFlags.NonPublic);
+        return (string[])sortingLayersProperty.GetValue(null, new object[0]);
+    }
 }

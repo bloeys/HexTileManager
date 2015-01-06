@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEditorInternal;
 using System;
 using System.Reflection;
 using System.Collections;
@@ -94,13 +93,5 @@ public class TileMain : MonoBehaviour
             Gizmos.color = Color.red;
             Gizmos.DrawWireCube(this.MarkerPosition, new Vector3(this.PixelSize.x / pixeltounit, this.PixelSize.y / pixeltounit, 1) * 1.1f);
         }
-    }
-
-    // Get the sorting layer names
-    public string[] GetSortingLayerNames()
-    {
-        Type internalEditorUtilityType = typeof(InternalEditorUtility);
-        PropertyInfo sortingLayersProperty = internalEditorUtilityType.GetProperty("sortingLayerNames", BindingFlags.Static | BindingFlags.NonPublic);
-        return (string[])sortingLayersProperty.GetValue(null, new object[0]);
     }
 }

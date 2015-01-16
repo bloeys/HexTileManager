@@ -63,7 +63,7 @@ public class TileMainEditor : Editor
             //Raycast from camera to mouse position 
             Ray r = HandleUtility.GUIPointToWorldRay(new Vector2(e.mousePosition.x, e.mousePosition.y));
             mouseHitPos = r.origin;
-
+            
             // checks if mouse is on the gameobject layer
             if (IsMouseOnLayer())
             {
@@ -91,6 +91,7 @@ public class TileMainEditor : Editor
             Handles.BeginGUI();
             GUI.Label(new Rect(10, Screen.height - 90, 100, 100), "LMB: Draw");
             GUI.Label(new Rect(10, Screen.height - 105, 100, 100), "RMB: Erase");
+            //GUI.Label(new Rect(10, Screen.height - 120, 1000, 100), Physics2D.Raycast(mouseHitPos, Vector2.zero).transform.name);
             Handles.EndGUI();
         }
     }
@@ -100,9 +101,9 @@ public class TileMainEditor : Editor
         //showing properties window
         tilemain.showProperties = EditorGUILayout.Foldout(tilemain.showProperties, "Properties");
         if (tilemain.showProperties)
-        {
-
+        { 
             checkbool = tilemain.isdrawmode;
+
             //Create a box layout
             GUILayout.BeginVertical("box");
             tilemain.isdrawmode = GUILayout.Toggle(tilemain.isdrawmode, " Draw Mode");
@@ -128,9 +129,9 @@ public class TileMainEditor : Editor
                 if (tilemain.SpriteSheet)
                 {
                     GenerateTiles();
-
                 }
             }
+
             GUILayout.BeginHorizontal();
             checkint = tilemain.pixeltounit;
             GUILayout.Label("Pixel To Unit:");
@@ -138,6 +139,7 @@ public class TileMainEditor : Editor
             GUILayout.EndHorizontal();
             if (checkint != tilemain.pixeltounit)
                 OnEnable();
+
             //SizeGui
             checkvector2 = tilemain.PixelSize;
             tilemain.PixelSize = EditorGUILayout.Vector2Field("Pixel Size: ", tilemain.PixelSize);
@@ -163,7 +165,6 @@ public class TileMainEditor : Editor
             tilemain.addMaterial = GUILayout.Toggle(tilemain.addMaterial, " Add Material");
             if (tilemain.addMaterial)
                 tilemain.tileMaterial = EditorGUILayout.ObjectField(tilemain.tileMaterial, typeof(Material), false) as Material;
-
             GUILayout.EndVertical();
         }
         //Tiles GUI
@@ -175,8 +176,6 @@ public class TileMainEditor : Editor
 
             if (tilemain.tilesNo > 0)
             {
-
-
                 if (isTilesetDone == false)
                 {
                     isTilesetDone = true;
@@ -187,8 +186,8 @@ public class TileMainEditor : Editor
                     isTilesetDone = false;
                     tilebutton = "Show Tiles";
                 }
-
             }
+
             else
             {
                 isTilesetDone = false;
@@ -202,7 +201,6 @@ public class TileMainEditor : Editor
         if (isTilesetDone)
         {
             tilemain.tileGridId = GUILayout.SelectionGrid(tilemain.tileGridId, tilemain.asset, 6, tilemain.texButton);
-
         }
         GUILayout.EndScrollView();
 
@@ -213,7 +211,6 @@ public class TileMainEditor : Editor
         {
             //set the current object as a dirty prefab so it wont lode the default values from the prefab
             EditorUtility.SetDirty(tilemain);
-
         }
     }
 
@@ -245,23 +242,18 @@ public class TileMainEditor : Editor
                         GenerateTiles();
                     }
                 }
-
-
-
             }
-
-
         }
-
-
     }
+
     // Drawing function
     private void Draw()
     {
-        //Checks if a game object has been already created on that place
-        if (!tilemain.transform.Find(string.Format("Tile_{0}_{1}_{2}", tilepos.x, tilepos.y, tilepos.z)))
-        {
+        RaycastHit2D rayHit = Physics2D.Raycast(mouseHitPos, Vector2.zero);
 
+        //Makes sure the place is empty, or if it is not, that the object there is not a tile
+        if (!rayHit.collider || !rayHit.transform.name.Contains("Tile_"))
+        {
             //lets you undo editor changes
             Undo.IncrementCurrentGroup();
             // Instantiate a gameobject with the selected sprite and selected grid location and as a children of main layer 
@@ -270,9 +262,18 @@ public class TileMainEditor : Editor
             renderer.sprite = tilemain.Tiles[tilemain.tileGridId];
             renderer.sortingLayerName = sortingLayers[tilemain.chosenSortingLayer]; //Set sorting layer of tile to selected one
             tile.transform.position = tilemain.MarkerPosition;
+
             //Add collider if wanted
             if (tilemain.addcollider)
+            {
                 tile.AddComponent(tilemain.collidertype[tilemain.coltyp]);
+            }
+            else
+            {
+                tile.AddComponent(tilemain.collidertype[0]);    //Add a boxCollider2D for raycasting (will be removed on play)
+                tilemain.noColliderTiles.Add(tile.transform);   //Add the transform of the tile to this list
+                EditorUtility.SetDirty(tilemain);   //To make changes remain
+            }
 
             //Add material if wanted and if the material is not null
             if (tilemain.addMaterial && tilemain.tileMaterial)
@@ -282,23 +283,39 @@ public class TileMainEditor : Editor
             tile.transform.parent = tilemain.transform;
             Undo.RegisterCreatedObjectUndo(tile, "Create Tile");
         }
-        // checks if a game object is already located on that location,if true change she sprite of that gameobject
-        if (tilemain.transform.Find(string.Format("Tile_{0}_{1}_{2}", tilepos.x, tilepos.y, tilepos.z)))
+
+        //If a tile is already located on this location, just change the sprite of that tile
+        else if (rayHit.transform.name.Contains("Tile_"))
         {
-            Undo.RecordObject(tilemain.transform.Find(string.Format("Tile_{0}_{1}_{2}", tilepos.x, tilepos.y, tilepos.z)).GetComponent<SpriteRenderer>().sprite, "Change Sprite");
-            tilemain.transform.Find(string.Format("Tile_{0}_{1}_{2}", tilepos.x, tilepos.y, tilepos.z)).GetComponent<SpriteRenderer>().sprite = tilemain.Tiles[tilemain.tileGridId];
+            Undo.RecordObject(rayHit.transform.GetComponent<SpriteRenderer>().sprite, "Change Sprite");
+            rayHit.transform.GetComponent<SpriteRenderer>().sprite = tilemain.Tiles[tilemain.tileGridId];
         }
     }
+
     // Delete Function
     private void Delete()
     {
-        if (tilemain.transform.Find(string.Format("Tile_{0}_{1}_{2}", tilepos.x, tilepos.y, tilepos.z)))
-        {
-            Undo.IncrementCurrentGroup();
-            Undo.DestroyObjectImmediate(tilemain.transform.Find(string.Format("Tile_{0}_{1}_{2}", tilepos.x, tilepos.y, tilepos.z)).gameObject);
+        RaycastHit2D[] rayHit = Physics2D.RaycastAll(mouseHitPos, Vector2.zero);
 
+        //If there is a collider beneath us
+        if (rayHit.Length > 0)
+        {
+            //Find which one of the collider (assuming there might be more than one) is the tile
+            for (int i = 0; i < rayHit.Length; i++)
+            {
+                //If this collider is the our tile
+                if (rayHit[i].transform.name.Contains("Tile_"))
+                {
+                    tilemain.noColliderTiles.Remove(rayHit[i].transform);   //Remove from list
+                    Undo.IncrementCurrentGroup();
+                    Undo.DestroyObjectImmediate(rayHit[i].transform.gameObject);    //Destroy
+                    EditorUtility.SetDirty(tilemain);   //Make sure changes remain
+                    break;  //Break out of the loop
+                }
+            }
         }
     }
+
     // checks if the mouse is on the layer
     private bool IsMouseOnLayer()
     {

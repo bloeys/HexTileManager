@@ -37,6 +37,8 @@ public class TileMain : MonoBehaviour
     public string[] collidertype = new string[3] { "BoxCollider2D", "CircleCollider2D", "PolygonCollider2D" };
     //int for collider type
     public int coltyp;
+    //List that stores transforms of tiles that we don't want colliders on them
+    public List<Transform> noColliderTiles = new List<Transform>();
     //Pixel to Unit
     public int pixeltounit = 100;
     //position of the marker
@@ -48,15 +50,27 @@ public class TileMain : MonoBehaviour
     public bool addMaterial;    //Bool to decide if we want to add a material or not
 
     // Use this for initialization
-    void Start()
+    void Awake()
     {
-
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
+        //Destroy colliders on tiles that don't want them
+        for (int i = 0; i < noColliderTiles.Count; i++)
+        {
+            //If the tile exists, destrot its collider
+            if (noColliderTiles[i])
+            {
+                Destroy(noColliderTiles[i].collider2D);
+            }
+            
+            //Otherwise destory it and tell me where it is (happens with null references, doesn't normally happen)
+            else
+            {
+                noColliderTiles.RemoveAt(i);
+                Debug.Log("Removed empty tile at index: " + i);
+            }
+        }
+        
+        //Call GC to collect this garbage we created
+        System.GC.Collect();
     }
 
     //Drawing the Grid

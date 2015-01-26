@@ -60,13 +60,6 @@ public class TileMain : MonoBehaviour
             {
                 Destroy(noColliderTiles[i].collider2D);
             }
-            
-            //Otherwise destory it and tell me where it is (happens with null references, doesn't normally happen)
-            else
-            {
-                noColliderTiles.RemoveAt(i);
-                Debug.Log("Removed empty tile at index: " + i);
-            }
         }
         
         //Call GC to collect this garbage we created

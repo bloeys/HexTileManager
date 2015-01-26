@@ -44,6 +44,16 @@ public class TileMainEditor : Editor
         tilesize.y = tilemain.PixelSize.y / tilemain.pixeltounit;
         sortingLayers = GetSortingLayerNames();
         //Debug.Log(tilemain.Tiles[0].textureRect.height / tilemain.Tiles[0].bounds.size.y);
+
+        //Loop through the list of colliders and remove any empty entries
+        for (int i = 0; i < tilemain.noColliderTiles.Count; i++)
+        {
+            if (!tilemain.noColliderTiles[i])
+            {
+                tilemain.noColliderTiles.RemoveAt(i);
+                Debug.Log("Removed empty tile at index: " + i);
+            }
+        }
     }
 
     //All the work happinning in Scene view
